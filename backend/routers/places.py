@@ -635,24 +635,6 @@ RECOMMENDATIONS_BY_REGION: dict[str, list[dict]] = {
             "sponsored": False,
             "tagline": "Same neighborhood as Shibuya Crossing",
         },
-        {
-            "place": {
-                "place_id": "rec-ichiran",
-                "name": "Ichiran Shibuya",
-                "address": "1-22-7 Jinnan, Shibuya City, Tokyo",
-                "lat": 35.6614, "lng": 139.6989,
-                "suggested_duration": 0.75,
-                "duration_note": "Solo-booth ramen, plan ~45 min including wait",
-                "types": ["restaurant", "food"],
-                "category": "food",
-                "region": "Tokyo",
-                "meal_type": "lunch",
-                "opening_hours": _oh_24(),  # 24 hours
-            },
-            "sponsored": True,
-            "sponsor_label": "Featured by Ichiran",
-            "tagline": "Quick lunch near your Shibuya stops",
-        },
     ],
     "Paris": [
         {
