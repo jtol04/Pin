@@ -165,7 +165,7 @@ const DEMO_SCENARIOS: DemoScenario[] = [
   },
   {
     id: 'advertiser',
-    label: 'Local Business Advertiser',
+    label: 'Local Business Advertiser (NYC)',
     subtitle: "LES stop · Katz's lands in Recommended",
     dates: ['2026-05-15', '2026-05-16'],
     transport: 'walking',
@@ -174,6 +174,52 @@ const DEMO_SCENARIOS: DemoScenario[] = [
       { inline: WASHINGTON_SQUARE_INLINE },
       { place_id: "ChIJK3vOQyNawokRXEa9errdJiU", name: "Brooklyn Bridge" },
       { place_id: "ChIJ5bQPhMdZwokRkTwKhVxhP1g", name: "High Line" },
+    ],
+  },
+  {
+    id: 'advertiser-tokyo',
+    label: 'Local Business Advertiser (Tokyo)',
+    subtitle: 'Shibuya stop · Tsukemen Daikoku lands in Recommended',
+    dates: ['2026-05-15', '2026-05-16'],
+    transport: 'walking',
+    places: [
+      // Shibuya/Ebisu anchor — surfaces the Tokyo sponsored recs
+      {
+        inline: {
+          name: 'Shibuya Crossing',
+          duration: 0.5,
+          place_id: 'demo-shibuya',
+          lat: 35.6595, lng: 139.7004,
+          types: ['tourist_attraction', 'point_of_interest'],
+          category: 'attraction',
+          region: 'Shibuya',
+          selected: true,
+        },
+      },
+      {
+        inline: {
+          name: 'Meiji Shrine',
+          duration: 1.5,
+          place_id: 'demo-meiji',
+          lat: 35.6764, lng: 139.6993,
+          types: ['place_of_worship', 'park'],
+          category: 'attraction',
+          region: 'Shibuya',
+          selected: true,
+        },
+      },
+      {
+        inline: {
+          name: 'Senso-ji Temple',
+          duration: 1.5,
+          place_id: 'demo-sensoji',
+          lat: 35.7148, lng: 139.7967,
+          types: ['place_of_worship', 'tourist_attraction'],
+          category: 'attraction',
+          region: 'Asakusa',
+          selected: true,
+        },
+      },
     ],
   },
 ]

@@ -586,6 +586,24 @@ RECOMMENDATIONS_BY_REGION: dict[str, list[dict]] = {
     "Tokyo": [
         {
             "place": {
+                "place_id": "rec-tsukemen-daikoku",
+                "name": "Tsukemen Daikoku",
+                "address": "1-7-3 Dogenzaka, Shibuya City, Tokyo 150-0043",
+                "lat": 35.6580, "lng": 139.6985,
+                "suggested_duration": 1.0,
+                "duration_note": "30-seat tsukemen counter — plan ~1h including queue",
+                "types": ["restaurant", "food"],
+                "category": "food",
+                "region": "Shibuya",
+                "meal_type": "lunch",
+                "opening_hours": _oh("1100", "2200"),  # 11am–10pm daily
+            },
+            "sponsored": True,
+            "sponsor_label": "Featured by Tsukemen Daikoku",
+            "tagline": "Independent 30-seat shop · steps from your Shibuya stops",
+        },
+        {
+            "place": {
                 "place_id": "rec-teamlab",
                 "name": "teamLab Planets",
                 "address": "6-1-16 Toyosu, Koto City, Tokyo",
