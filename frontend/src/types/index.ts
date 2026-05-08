@@ -122,3 +122,14 @@ export interface Trip {
   transport_mode: TransportMode
   itinerary?: ScheduleResult
 }
+
+export interface Recommendation {
+  place: PlaceSuggestion
+  sponsored: boolean
+  sponsor_label?: string
+  tagline: string
+}
+
+export interface RecommendationsResult {
+  recommendations: Recommendation[]
+}

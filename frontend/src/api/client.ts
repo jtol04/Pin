@@ -7,6 +7,7 @@ import type {
   Place,
   MultiDayScheduleRequest,
   MultiDayScheduleResult,
+  RecommendationsResult,
 } from '../types'
 
 async function post<T>(path: string, body: unknown): Promise<T> {
@@ -49,6 +50,26 @@ export async function autocomplete(q: string): Promise<AutocompleteResult[]> {
 
 export async function suggestPlace(place_id: string, name: string): Promise<PlaceSuggestion> {
   return post('/places/suggest', { place_id, name })
+}
+
+// ── Social media import ───────────────────────────────────────────────
+
+export async function importSocial(url: string): Promise<{ places: PlaceSuggestion[]; source: string }> {
+  return post('/places/import-social', { url })
+}
+
+// ── Tailored recommendations ──────────────────────────────────────────
+
+export async function fetchRecommendations(
+  regions: string[],
+  categories: string[],
+  existingPlaceIds: string[],
+): Promise<RecommendationsResult> {
+  return post('/places/recommendations', {
+    regions,
+    categories,
+    existing_place_ids: existingPlaceIds,
+  })
 }
 
 // ── Trips (persistence + sharing) ─────────────────────────────────────────

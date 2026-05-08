@@ -13,11 +13,19 @@ router = APIRouter(prefix="/itinerary")
 
 
 async def _get_matrix(places, mode: str = "driving"):
-    """Fetch real travel times if all places have place_ids, else return None (flat fallback)."""
-    place_ids = [p.place_id for p in places if p.place_id]
-    if len(place_ids) == len(places) and len(places) >= 2:
-        return await maps.get_travel_time_matrix(place_ids, mode=mode)
-    return None
+    """
+    Fetch travel times for the trip. Uses Google Distance Matrix with live
+    traffic when place_ids are real; falls back per-pair to coordinate-based
+    estimates for synthetic IDs or missing place_ids.
+    """
+    if len(places) < 2:
+        return None
+    place_ids = [p.place_id or "" for p in places]
+    coords = [
+        (p.lat, p.lng) if p.lat is not None and p.lng is not None else (0.0, 0.0)
+        for p in places
+    ]
+    return await maps.get_travel_time_matrix(place_ids, mode=mode, coords=coords)
 
 
 @router.post("/generate", response_model=ScheduleResult)

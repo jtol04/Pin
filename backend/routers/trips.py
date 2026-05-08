@@ -25,11 +25,20 @@ class UpdateTripRequest(BaseModel):
 async def _schedule(
     places: list[Place], day_start: float, day_end: float, mode: str = "driving"
 ) -> ScheduleResult:
-    """Fetch travel matrix then run the TSPTW scheduler."""
-    place_ids = [p.place_id for p in places if p.place_id]
+    """
+    Fetch travel matrix then run the TSPTW scheduler. Uses Google Distance
+    Matrix with live traffic when place_ids are real; falls back per-pair to
+    coordinate-based Haversine estimates for synthetic IDs or missing
+    place_ids.
+    """
     matrix = None
-    if len(place_ids) == len(places):
-        matrix = await maps.get_travel_time_matrix(place_ids, mode=mode)
+    if len(places) >= 2:
+        place_ids = [p.place_id or "" for p in places]
+        coords = [
+            (p.lat, p.lng) if p.lat is not None and p.lng is not None else (0.0, 0.0)
+            for p in places
+        ]
+        matrix = await maps.get_travel_time_matrix(place_ids, mode=mode, coords=coords)
     return build_itinerary(places, day_start, day_end, matrix)
 
 
@@ -41,15 +50,14 @@ async def create_trip(body: CreateTripRequest):
     result = await _schedule(body.places, body.day_start, body.day_end, body.transport_mode) if body.places else None
     trip_id = await db.create_trip(body.places, body.day_start, body.day_end)
 
-    if trip_id is None:
-        # Supabase not configured — return ephemeral result with a placeholder ID
-        return {
-            "id": "local",
-            "places": body.places,
-            "day_start": body.day_start,
-            "day_end": body.day_end,
-            "itinerary": result,
-        }
+    if trip_id and result is not None:
+        await db.update_trip(
+            trip_id,
+            body.places,
+            body.day_start,
+            body.day_end,
+            result.model_dump(),
+        )
 
     return {"id": trip_id, "itinerary": result}
 

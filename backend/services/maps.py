@@ -1,3 +1,5 @@
+from math import radians, sin, cos, asin, sqrt
+
 import httpx
 from config import GOOGLE_MAPS_API_KEY
 
@@ -5,7 +7,49 @@ PLACES_BASE = "https://maps.googleapis.com/maps/api/place"
 DISTANCE_BASE = "https://maps.googleapis.com/maps/api/distancematrix/json"
 
 FLAT_TRAVEL_MINUTES = 20
-# TODO: swap fallback with a real routing API call once keys are confirmed
+
+# ── Coordinate-based travel time fallback ─────────────────────────────────
+# Used when (a) the Maps API key is missing, (b) the API call fails, or
+# (c) a place_id isn't recognized by Google (e.g. synthetic demo IDs).
+# Speeds are conservative city-traffic averages; overhead covers parking,
+# walking from the lot, transfers, etc.
+MODE_SPEED_KMH: dict[str, float] = {
+    "driving": 25,
+    "walking": 5,
+    "bicycling": 15,
+    "transit": 20,
+}
+MODE_OVERHEAD_MIN: dict[str, int] = {
+    "driving": 3,
+    "walking": 1,
+    "bicycling": 2,
+    "transit": 5,
+}
+
+
+def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    R = 6371.0
+    lat1r, lng1r, lat2r, lng2r = (radians(x) for x in (lat1, lng1, lat2, lng2))
+    dlat = lat2r - lat1r
+    dlng = lng2r - lng1r
+    a = sin(dlat / 2) ** 2 + cos(lat1r) * cos(lat2r) * sin(dlng / 2) ** 2
+    return 2 * R * asin(sqrt(a))
+
+
+def _coord_travel_minutes(
+    lat1: float, lng1: float, lat2: float, lng2: float, mode: str
+) -> int:
+    if (lat1, lng1) == (lat2, lng2):
+        return 0
+    km = _haversine_km(lat1, lng1, lat2, lng2)
+    speed = MODE_SPEED_KMH.get(mode, MODE_SPEED_KMH["driving"])
+    overhead = MODE_OVERHEAD_MIN.get(mode, MODE_OVERHEAD_MIN["driving"])
+    return max(1, round((km / speed) * 60 + overhead))
+
+
+def _looks_synthetic(place_id: str) -> bool:
+    """Demo/recommendation IDs we generate in code (not real Google IDs)."""
+    return place_id.startswith(("demo-", "rec-"))
 
 
 async def search_place(query: str) -> dict | None:
@@ -231,52 +275,99 @@ async def get_place_details(place_id: str) -> dict | None:
     }
 
 
+def _coord_matrix(
+    coords: list[tuple[float, float]] | None,
+    n: int,
+    mode: str,
+) -> list[list[int]]:
+    """Full n×n travel matrix from lat/lng pairs. Falls back to flat 20 min
+    only if coordinates are missing — in which case we genuinely have no
+    information."""
+    if not coords or len(coords) != n:
+        return [[0 if i == j else FLAT_TRAVEL_MINUTES for j in range(n)] for i in range(n)]
+    return [
+        [
+            0 if i == j else _coord_travel_minutes(
+                coords[i][0], coords[i][1], coords[j][0], coords[j][1], mode
+            )
+            for j in range(n)
+        ]
+        for i in range(n)
+    ]
+
+
 async def get_travel_time_matrix(
     place_ids: list[str],
     mode: str = "driving",
+    coords: list[tuple[float, float]] | None = None,
 ) -> list[list[int]]:
     """
     Returns an n×n matrix of travel times in minutes.
-    mode: "driving" | "walking" | "bicycling" | "transit"
-    Falls back to flat FLAT_TRAVEL_MINUTES on failure.
+
+    Order of preference per pair:
+      1. Google Distance Matrix with `departure_time=now` for live-traffic
+         driving times.
+      2. Haversine-distance estimate using mode-specific speed (covers any
+         pair Google couldn't resolve, e.g. synthetic demo place_ids).
+      3. Flat FLAT_TRAVEL_MINUTES (only if we have neither place_ids that
+         Google recognizes nor coordinates).
     """
     n = len(place_ids)
-    flat = [[0 if i == j else FLAT_TRAVEL_MINUTES for j in range(n)] for i in range(n)]
+    if n < 2:
+        return [[0]] if n == 1 else []
 
-    if not GOOGLE_MAPS_API_KEY or n < 2:
-        return flat
+    # No API key, or every place_id is synthetic — skip the API call entirely.
+    all_synthetic = all(_looks_synthetic(p) for p in place_ids)
+    if not GOOGLE_MAPS_API_KEY or all_synthetic:
+        return _coord_matrix(coords, n, mode)
 
-    origins = "|".join(f"place_id:{pid}" for pid in place_ids)
+    # Google won't recognize synthetic IDs; only send real ones. Build a
+    # secondary "real-id-only" call and back-fill the rest from coordinates.
+    real_indices = [i for i, p in enumerate(place_ids) if not _looks_synthetic(p)]
+    real_ids = [place_ids[i] for i in real_indices]
+
+    # Pre-fill matrix with coordinate-based estimates as the baseline
+    matrix = _coord_matrix(coords, n, mode)
+
+    if len(real_ids) < 2:
+        return matrix  # nothing useful to ask Google
+
+    origins = "|".join(f"place_id:{pid}" for pid in real_ids)
+    params: dict[str, str | int] = {
+        "origins": origins,
+        "destinations": origins,
+        "mode": mode,
+        "key": GOOGLE_MAPS_API_KEY,
+    }
+    # Live traffic is only meaningful for driving and requires departure_time.
+    if mode == "driving":
+        params["departure_time"] = "now"
+        params["traffic_model"] = "best_guess"
 
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                DISTANCE_BASE,
-                params={
-                    "origins": origins,
-                    "destinations": origins,
-                    "mode": mode,
-                    "key": GOOGLE_MAPS_API_KEY,
-                },
-                timeout=10,
-            )
+            resp = await client.get(DISTANCE_BASE, params=params, timeout=10)
         data = resp.json()
 
         if data.get("status") != "OK":
-            return flat
+            return matrix
 
-        matrix = []
-        for row in data["rows"]:
-            row_times = []
-            for element in row["elements"]:
-                if element["status"] == "OK":
-                    row_times.append(element["duration"]["value"] // 60)
-                else:
-                    row_times.append(FLAT_TRAVEL_MINUTES)
-            matrix.append(row_times)
+        for row_idx, row in enumerate(data["rows"]):
+            for col_idx, element in enumerate(row["elements"]):
+                if element.get("status") != "OK":
+                    continue
+                # Prefer traffic-aware duration when present (driving + departure_time)
+                duration = element.get("duration_in_traffic") or element.get("duration") or {}
+                seconds = duration.get("value")
+                if seconds is None:
+                    continue
+                # Map the API row/col back to the original matrix indices
+                i = real_indices[row_idx]
+                j = real_indices[col_idx]
+                matrix[i][j] = seconds // 60
 
         return matrix
 
     except Exception as e:
         print(f"[maps.get_travel_time_matrix] failed: {e}")
-        return flat
+        return matrix

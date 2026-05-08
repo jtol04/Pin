@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import DayPanel from './DayPanel'
 import MapPanel from './MapPanel'
+import TripShare from './TripShare'
+import RecommendationsPanel from './RecommendationsPanel'
+import { createTrip } from '../api/client'
 import type { MultiDayScheduleResult, ItinerarySlot, Place, TransportMode } from '../types'
 
 interface Props {
@@ -15,6 +18,7 @@ interface Props {
   onRemoveStop: (dayIndex: number, name: string) => void
   onMoveToNextDay: (fromDay: number, name: string) => void
   onEditPlaces: () => void
+  onAddRecommendedPlace: (place: Place) => void
 }
 
 function formatTabLabel(date: string | undefined, dayIndex: number): string {
@@ -26,9 +30,24 @@ function formatTabLabel(date: string | undefined, dayIndex: number): string {
 export default function ItineraryView({
   result, dayStart, dayEnd, places, transportMode,
   onReorder, onReschedule, onDurationChange, onRemoveStop, onMoveToNextDay, onEditPlaces,
+  onAddRecommendedPlace,
 }: Props) {
   const [activeDayIndex, setActiveDayIndex] = useState(0)
   const [dismissedCrawls, setDismissedCrawls] = useState<Set<string>>(new Set())
+  const [tripId, setTripId] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
+
+  async function handleShare() {
+    setSharing(true)
+    try {
+      const res = await createTrip(places, dayStart, dayEnd, transportMode)
+      setTripId(res.id)
+    } catch {
+      // silent
+    } finally {
+      setSharing(false)
+    }
+  }
 
   const activeDay = result.days[activeDayIndex] ?? result.days[0]
 
@@ -50,13 +69,27 @@ export default function ItineraryView({
             {result.days.length} day{result.days.length !== 1 ? 's' : ''} · {result.total_stats.stops} stops
           </p>
         </div>
-        <button
-          onClick={onEditPlaces}
-          className="text-sm text-indigo-600 hover:text-indigo-800 font-medium underline-offset-2 hover:underline"
-        >
-          ← Edit places
-        </button>
+        <div className="flex items-center gap-3">
+          {!tripId && (
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="text-sm font-medium px-4 py-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors disabled:text-gray-400"
+            >
+              {sharing ? 'Creating link…' : 'Share trip'}
+            </button>
+          )}
+          <button
+            onClick={onEditPlaces}
+            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium underline-offset-2 hover:underline"
+          >
+            ← Edit places
+          </button>
+        </div>
       </div>
+
+      {/* Share link */}
+      {tripId && <TripShare tripId={tripId} />}
 
       {/* Day tabs */}
       {result.days.length > 1 && (
@@ -135,6 +168,9 @@ export default function ItineraryView({
           </div>
         </div>
       )}
+
+      {/* Tailored recommendations (sponsored placements) */}
+      <RecommendationsPanel places={places} onAddPlace={onAddRecommendedPlace} />
     </div>
   )
 }

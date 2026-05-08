@@ -204,6 +204,36 @@ export default function App() {
     }
   }
 
+  async function handleAddRecommendedPlace(place: Place) {
+    // Append the recommended place, then re-run multi-day generation so it
+    // lands on a sensible day with full scheduling/conflict logic applied.
+    const updatedPlaces = places.some((p) => p.name === place.name)
+      ? places
+      : [...places, { ...place, selected: true }]
+    setPlaces(updatedPlaces)
+
+    if (!startDate || !endDate) return
+
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await generateMultiDayItinerary({
+        places: updatedPlaces,
+        day_start: dayStart,
+        day_end: dayEnd,
+        transport_mode: transportMode,
+        start_date: startDate,
+        end_date: endDate,
+        selected_names: updatedPlaces.filter((p) => p.selected !== false).map((p) => p.name),
+      })
+      setMultiDayResult(result)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to add recommendation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function handleMoveToNextDay(fromDay: number, name: string) {
     if (!multiDayResult) return
     const srcDay = multiDayResult.days.find((d) => d.day_index === fromDay)
@@ -292,6 +322,7 @@ export default function App() {
             onRemoveStop={handleRemoveStop}
             onMoveToNextDay={handleMoveToNextDay}
             onEditPlaces={() => setStage('staging')}
+            onAddRecommendedPlace={handleAddRecommendedPlace}
           />
         )}
       </main>
