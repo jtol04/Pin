@@ -276,7 +276,7 @@ def _demo_suggestion(name: str) -> PlaceSuggestion | None:
 # Hardcoded data for the NYC demo trip's place_ids. Lets the demo button
 # populate a full itinerary (including map markers) when no Maps key is set.
 NYC_DEMO_BY_PLACE_ID: dict[str, dict] = {
-    "ChIJb8Jg9pZYwokR-qHGtvSkLzs": {
+    "ChIJ4zGFAZpYwokRGUGph3Mf37k": {
         "name": "Central Park",
         "address": "New York, NY",
         "lat": 40.7829, "lng": -73.9654,
@@ -287,7 +287,7 @@ NYC_DEMO_BY_PLACE_ID: dict[str, dict] = {
         "region": "Upper West Side",
         "opening_hours": _oh("0600", "0100"),  # 6am–1am daily
     },
-    "ChIJmQJIxlNYwokRLgeuocVOGVU": {
+    "ChIJb8Jg9pZYwokR-qHGtvSkLzs": {
         "name": "The Metropolitan Museum of Art",
         "address": "1000 5th Ave, New York, NY 10028",
         "lat": 40.7794, "lng": -73.9632,
@@ -307,7 +307,7 @@ NYC_DEMO_BY_PLACE_ID: dict[str, dict] = {
             ("1000", "2100"),  # Sat (late)
         ]),
     },
-    "ChIJ4zGFAZpYwokRGUGph3Mf37k": {
+    "ChIJmQJIxlVYwokRLgeuocVOGVU": {
         "name": "Times Square",
         "address": "Manhattan, NY 10036",
         "lat": 40.7580, "lng": -73.9855,
@@ -318,7 +318,7 @@ NYC_DEMO_BY_PLACE_ID: dict[str, dict] = {
         "region": "Midtown West",
         "opening_hours": _oh_24(),  # public square
     },
-    "ChIJhR5DGkBawokRRGIkkChP3qs": {
+    "ChIJK3vOQyNawokRXEa9errdJiU": {
         "name": "Brooklyn Bridge",
         "address": "Brooklyn Bridge, New York, NY",
         "lat": 40.7061, "lng": -73.9969,
@@ -329,7 +329,7 @@ NYC_DEMO_BY_PLACE_ID: dict[str, dict] = {
         "region": "Brooklyn Heights",
         "opening_hours": _oh_24(),  # pedestrian path is always open
     },
-    "ChIJy7cGfBlawokR2MVMmJfn1HU": {
+    "ChIJTWE_0BtawokRVJNGH5RS448": {
         "name": "One World Observatory",
         "address": "117 West St, New York, NY 10007",
         "lat": 40.7127, "lng": -74.0134,
@@ -340,7 +340,7 @@ NYC_DEMO_BY_PLACE_ID: dict[str, dict] = {
         "region": "Financial District",
         "opening_hours": _oh("0900", "2100"),  # daily 9am–9pm
     },
-    "ChIJx8DrP5ZYwokRUpXr49t9n3A": {
+    "ChIJw2lMFL9ZwokRosAtly52YX4": {
         "name": "Chelsea Market",
         "address": "75 9th Ave, New York, NY 10011",
         "lat": 40.7421, "lng": -74.0061,
