@@ -3,7 +3,6 @@ import type {
   ScheduleResult,
   PlaceSuggestion,
   AutocompleteResult,
-  Trip,
   Place,
   MultiDayScheduleRequest,
   MultiDayScheduleResult,
@@ -74,32 +73,41 @@ export async function fetchRecommendations(
 
 // ── Trips (persistence + sharing) ─────────────────────────────────────────
 
-export async function createTrip(
-  places: Place[],
-  day_start: number,
-  day_end: number,
-  transport_mode: string,
-): Promise<{ id: string; itinerary?: ScheduleResult }> {
-  return post('/trips/', { places, day_start, day_end, transport_mode })
+export interface TripPayload {
+  places: Place[]
+  day_start: number
+  day_end: number
+  transport_mode: string
+  start_date?: string
+  end_date?: string
 }
 
-export async function getTrip(id: string): Promise<Trip> {
+export interface SharedTrip {
+  id: string
+  places: Place[]
+  day_start: number
+  day_end: number
+  transport_mode: string
+  start_date?: string
+  end_date?: string
+  itinerary?: MultiDayScheduleResult | ScheduleResult
+}
+
+export async function createTrip(payload: TripPayload): Promise<SharedTrip> {
+  return post('/trips/', payload)
+}
+
+export async function getTrip(id: string): Promise<SharedTrip> {
   const res = await fetch(`/trips/${id}`)
   if (!res.ok) throw new Error(`Trip ${id} not found`)
   return res.json()
 }
 
-export async function updateTrip(
-  id: string,
-  places: Place[],
-  day_start: number,
-  day_end: number,
-  transport_mode: string,
-): Promise<{ itinerary: ScheduleResult }> {
+export async function updateTrip(id: string, payload: TripPayload): Promise<SharedTrip> {
   const res = await fetch(`/trips/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ places, day_start, day_end, transport_mode }),
+    body: JSON.stringify(payload),
   })
   if (!res.ok) throw new Error(`updateTrip failed: ${res.status}`)
   return res.json()

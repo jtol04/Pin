@@ -323,6 +323,8 @@ export default function App() {
             onMoveToNextDay={handleMoveToNextDay}
             onEditPlaces={() => setStage('staging')}
             onAddRecommendedPlace={handleAddRecommendedPlace}
+            startDate={startDate}
+            endDate={endDate}
           />
         )}
       </main>

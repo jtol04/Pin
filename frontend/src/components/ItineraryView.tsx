@@ -12,6 +12,8 @@ interface Props {
   dayEnd: number
   places: Place[]
   transportMode: TransportMode
+  startDate: string
+  endDate: string
   onReorder: (dayIndex: number, newSlots: ItinerarySlot[]) => void
   onReschedule: (dayIndex: number, reorderedSlots: ItinerarySlot[]) => Promise<void>
   onDurationChange: (dayIndex: number, name: string, duration: number) => void
@@ -28,7 +30,7 @@ function formatTabLabel(date: string | undefined, dayIndex: number): string {
 }
 
 export default function ItineraryView({
-  result, dayStart, dayEnd, places, transportMode,
+  result, dayStart, dayEnd, places, transportMode, startDate, endDate,
   onReorder, onReschedule, onDurationChange, onRemoveStop, onMoveToNextDay, onEditPlaces,
   onAddRecommendedPlace,
 }: Props) {
@@ -40,7 +42,14 @@ export default function ItineraryView({
   async function handleShare() {
     setSharing(true)
     try {
-      const res = await createTrip(places, dayStart, dayEnd, transportMode)
+      const res = await createTrip({
+        places,
+        day_start: dayStart,
+        day_end: dayEnd,
+        transport_mode: transportMode,
+        start_date: startDate,
+        end_date: endDate,
+      })
       setTripId(res.id)
     } catch {
       // silent
