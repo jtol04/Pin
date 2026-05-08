@@ -8,9 +8,10 @@ A travel itinerary planner that turns a list of places into a researched, time-a
 - **Live travel times** — Google Distance Matrix (with `departure_time=now` for traffic-aware driving times); Haversine fallback per pair when a place has no Google ID.
 - **Opening-hours awareness** — venues closed on the trip date are filtered with a conflict notice; the scheduler shifts stops to fit each venue's open window.
 - **Adaptive replanning** — drop, reorder, or change a stop's duration and the entire schedule recomputes (travel times, conflicts, free hours) in real time.
-- **Social-media import** — paste an Instagram / TikTok / Reddit link and Pin extracts the named places (canned demo URLs short-circuit Maps so the flow works without a key; real URLs use the Anthropic API + Google Places).
-- **Group trip coordination** — any trip turns into a unique share link (`/trip/<id>`); collaborators view the same itinerary, places list, and conflicts. Backed by Supabase when configured, with an in-memory fallback for local development.
-- **Tailored recommendations** — region-aware sponsored + organic picks appear on the itinerary view; one tap adds them to the trip and re-runs the scheduler.
+- **Social-media import** — paste an Instagram / TikTok / Reddit link and Pin extracts the named places (canned demo URLs short-circuit Maps so the flow works without a key; real URLs use the Anthropic API + Google Places). The paste-a-link UI is the proof-of-concept stand-in for what would ship as a native share-sheet action ("Share to Pin").
+- **Group trip coordination** — any trip turns into a unique share link (`/trip/<id>`). The shared view is multi-day, fully editable by collaborators (add a place, ✕ to remove a stop), and shows a clear shared-trip banner with one-click copy. Every edit syncs back through the trips API. Backed by Supabase when configured, with an in-memory fallback for local development.
+- **Tailored recommendations** — region-aware sponsored + organic picks appear on the itinerary view; one tap adds them to the trip and re-runs the scheduler. Sponsors are matched by city, neighborhood, and open meal slot.
+- **Multi-demo selector** — five pre-built demo trips on the staging screen for screenshot-friendly walkthroughs: NYC Classic, Family Vacation, Solo First-Time Traveler, Local Business Advertiser (NYC), Local Business Advertiser (Tokyo).
 
 ## Running the backend
 
@@ -54,14 +55,20 @@ VITE_GOOGLE_MAPS_API_KEY=...   # enables the embedded map view
 ## Demo flow
 
 1. Open http://localhost:5173.
-2. Click **Load NYC Demo Trip** to populate 8 pre-set NYC places with full data, or paste one of the social-import demo URLs:
+2. From the **Trip details** card, click **Load demo trip ▾** and pick one of the pre-built scenarios:
+   - **NYC Classic** — 3-day NYC tour with 8 must-see spots
+   - **Family Vacation** — Met museum tour fixed at 10am, Katz's dinner fixed at 7pm, kids' picks fill the gaps (showcases fixed times + meal windows)
+   - **Solo First-Time Traveler** — Joe's Pizza, Los Tacos, and Levain Bakery imported from Instagram + headline NYC sights (showcases social import + recommendations)
+   - **Local Business Advertiser (NYC)** — anchored on a Lower East Side stop so Katz's Delicatessen surfaces in *Recommended for you* with a Sponsored badge
+   - **Local Business Advertiser (Tokyo)** — anchored on Shibuya so Tsukemen Daikoku surfaces as a sponsored placement
+3. Or paste a social-import demo URL into the **Import from social media** section:
    - `https://www.instagram.com/p/DH7sa2tuvWw/?img_index=1&igsh=dGw1aXc1YjFtNGZh` → Tokyo ramen crawl
    - `https://instagram.com/p/nyc-foodie` → NYC food crawl
    - `https://tiktok.com/@traveler/tokyo` → Tokyo highlights
    - `https://reddit.com/r/travel/paris` → Paris weekend
-3. Set trip dates and click **Create itinerary**.
-4. On the itinerary view: drag stops to reorder, slide durations, drop stops, or use the **Recommended for you** panel to add sponsored/organic picks.
-5. Click **Share trip** to get a `/trip/<id>` link to send to collaborators.
+4. Click **Create itinerary** to generate the multi-day plan.
+5. On the itinerary view: drag stops to reorder, slide durations, remove stops, or use the **Recommended for you** panel to add sponsored / organic picks.
+6. Click **Share trip** to get a `/trip/<id>` link. Open it in another tab to see the collaborator view (multi-day, editable, with a *"This is a shared trip"* banner).
 
 ## Project structure
 
